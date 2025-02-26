@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 # Page Configuration
 st.set_page_config(page_title="Grade Calculator", layout="wide")
@@ -27,10 +28,26 @@ if st.button("📊 Calculate Grades"):
     # Calculate average grades
     averages = [sum(s["Scores"]) / num_subjects for s in students]
     
+    # Grade Classification
+    def classify_grade(avg):
+        if avg >= 90:
+            return "A"
+        elif avg >= 80:
+            return "B"
+        elif avg >= 70:
+            return "C"
+        elif avg >= 60:
+            return "D"
+        else:
+            return "F"
+
+    grades = [classify_grade(avg) for avg in averages]
+
     # Create DataFrame
     df = pd.DataFrame({
         "Name": [s["Name"] for s in students],
-        "Average Grade (%)": [f"{avg:.2f}%" for avg in averages]
+        "Average Grade (%)": [f"{avg:.2f}%" for avg in averages],
+        "Grade": grades
     })
 
     # Identify Top Performer
@@ -45,6 +62,60 @@ if st.button("📊 Calculate Grades"):
     st.markdown("<h2 style='color: #E74C3C;'>🏆 Top Performer</h2>", unsafe_allow_html=True)
     st.dataframe(df[df["Top Performer"]])
 
-    # Grade Distribution Chart
+    # Grade Distribution Chart (Using Plotly)
     st.markdown("<h2 style='color: #9B59B6;'>📊 Grade Distribution</h2>", unsafe_allow_html=True)
-    st.bar_chart(df.set_index("Name")["Average Grade (%)"].str.replace('%', '').astype(float))
+    
+    # Prepare data for Plotly
+    df_plotly = df.copy()
+    df_plotly["Average Grade (%)"] = df_plotly["Average Grade (%)"].str.replace('%', '').astype(float)
+    
+    # Create a beautiful bar chart with Plotly
+    fig = px.bar(
+        df_plotly,
+        x="Name",
+        y="Average Grade (%)",
+        color="Grade",
+        text="Average Grade (%)",
+        title="Student Grade Distribution",
+        labels={"Average Grade (%)": "Average Grade (%)", "Name": "Student Name"},
+        color_discrete_sequence=px.colors.qualitative.Pastel,  # Use a pastel color palette
+    )
+    
+    # Customize hover text
+    fig.update_traces(
+        hovertemplate="<b>%{x}</b><br>Average Grade: %{y:.2f}%<br>Grade: %{marker.color}"
+    )
+    
+    # Customize layout
+    fig.update_layout(
+        xaxis_title="Student Name",
+        yaxis_title="Average Grade (%)",
+        template="plotly_white",  # Use a clean white theme
+        showlegend=True,
+        hovermode="x unified",
+    )
+    
+    # Display the Plotly chart
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Subject-wise Analysis
+    st.markdown("<h2 style='color: #3498DB;'>📚 Subject-wise Analysis</h2>", unsafe_allow_html=True)
+    subject_analysis = pd.DataFrame({
+        "Subject": [f"Subject {j+1}" for j in range(num_subjects)],
+        **{s["Name"]: s["Scores"] for s in students}
+    })
+    st.dataframe(subject_analysis)
+
+    # Downloadable Report
+    st.markdown("<h2 style='color: #F39C12;'>📥 Download Report</h2>", unsafe_allow_html=True)
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download as CSV",
+        data=csv,
+        file_name='student_grades.csv',
+        mime='text/csv',
+    )
+
+# Footer
+st.markdown("---")
+st.markdown("<p style='text-align: center; color: #7F8C8D;'>© 2023 Grade Calculator. All rights reserved.</p>", unsafe_allow_html=True)
