@@ -119,4 +119,4 @@ if st.button("📊 Calculate Grades"):
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: #7F8C8D;'>© 2023 Grade Calculator. All rights reserved.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #7F8C8D;'>© 2025 Grade Calculator. All rights reserved.</p>", unsafe_allow_html=True)
